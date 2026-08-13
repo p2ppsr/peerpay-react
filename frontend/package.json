@@ -5,11 +5,11 @@
   "type": "module",
   "private": true,
   "dependencies": {
-    "@babbage/go": "^0.1.16",
+    "@babbage/go": "^0.1.19",
     "@bsv/amountinator-react": "^1.0.1",
     "@bsv/identity-react": "^1.1.14",
     "@bsv/message-box-client": "^2.0.4",
-    "@bsv/sdk": "^2.0.12",
+    "@bsv/sdk": "^2.4.0",
     "@bsv/uhrp-react": "^1.0.6",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
