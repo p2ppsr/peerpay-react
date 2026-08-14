@@ -28,7 +28,6 @@ root.render(
       pauseOnHover
       theme="dark"
       toastClassName="peerpay-toast"
-      bodyClassName="peerpay-toast-body"
       progressClassName="peerpay-toast-progress"
     />
     <CssBaseline />

@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "description": "Peerpay project using CARS and LARS",
   "dependencies": {
-    "@p2ppsr/cars-cli": "^1.2.13",
-    "@p2ppsr/lars": "^1.5.11"
+    "@p2ppsr/cars-cli": "^1.2.32",
+    "@p2ppsr/lars": "^1.5.12"
   },
   "scripts": {
     "lars": "lars",
@@ -16,7 +16,7 @@
     "deploy": "cars deploy now 1"
   },
   "devDependencies": {
-    "sass": "^1.89.2",
-    "sass-embedded": "^1.89.2"
+    "sass": "^1.102.0",
+    "sass-embedded": "^1.102.0"
   }
 }
