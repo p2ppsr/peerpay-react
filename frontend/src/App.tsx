@@ -44,7 +44,7 @@ const App: React.FC = () => {
         ...payment,
         token: {
           ...payment.token,
-          transaction: new Uint8Array(payment.token.transaction)
+          transaction: payment.token.transaction
         }
       }))
 
@@ -86,7 +86,7 @@ const App: React.FC = () => {
               ...payment,
               token: {
                 ...payment.token,
-                transaction: new Uint8Array(payment.token.transaction)
+                transaction: payment.token.transaction
               }
             }
 
@@ -139,7 +139,7 @@ const App: React.FC = () => {
           sender: p.sender,
           token: {
             ...p.token,
-            transaction: Array.from(p.token.transaction)
+            transaction: p.token.transaction as IncomingPayment['token']['transaction']
           },
           outputIndex: p.token.outputIndex ?? 0
         }

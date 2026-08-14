@@ -10,7 +10,18 @@ export class InvalidPaymentTransactionError extends Error {
 }
 
 function transactionBytes(value: unknown): number[] {
-  const bytes = value instanceof Uint8Array ? Array.from(value) : value
+  let bytes: unknown = value instanceof Uint8Array ? Array.from(value) : value
+
+  // JSON.stringify(Uint8Array) produces an object with contiguous numeric
+  // keys. Some historical payment senders placed that representation directly
+  // in Message Box tokens, so recover it before validating the byte payload.
+  if (bytes != null && typeof bytes === 'object' && !Array.isArray(bytes)) {
+    const entries = Object.entries(bytes)
+    if (entries.length > 0 && entries.every(([key], index) => key === String(index))) {
+      bytes = entries.map(([, byte]) => byte)
+    }
+  }
+
   if (!Array.isArray(bytes) || bytes.length === 0 || bytes.some(byte => !Number.isInteger(byte) || byte < 0 || byte > 255)) {
     throw new InvalidPaymentTransactionError()
   }

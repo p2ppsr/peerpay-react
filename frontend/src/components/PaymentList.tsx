@@ -16,7 +16,7 @@ export interface Payment {
       derivationPrefix: string
       derivationSuffix: string
     }
-    transaction: Uint8Array
+    transaction: unknown
     amount: number
     outputIndex?: number
   }
@@ -40,7 +40,7 @@ const PaymentList: React.FC<PaymentListProps> = ({ payments = [], onUpdatePaymen
         sender: payment.sender,
         token: {
           ...payment.token,
-          transaction: Array.from(payment.token.transaction)
+          transaction: payment.token.transaction as IncomingPayment['token']['transaction']
         },
         outputIndex: payment.token.outputIndex ?? 0
       }
@@ -78,7 +78,7 @@ const PaymentList: React.FC<PaymentListProps> = ({ payments = [], onUpdatePaymen
         ...payment,
         token: {
           ...payment.token,
-          transaction: Array.from(payment.token.transaction)
+          transaction: payment.token.transaction as IncomingPayment['token']['transaction']
         },
         outputIndex: payment.token.outputIndex ?? 0
       }
