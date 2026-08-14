@@ -1,15 +1,17 @@
 import type { AtomicBEEF, CreateActionResult, WalletInterface } from '@bsv/sdk'
+import { toPortableWalletBytes } from './byteArrayCompatibility'
 
 function portableAtomicBeef(value: AtomicBEEF | undefined): AtomicBEEF | undefined {
-  return value instanceof Uint8Array ? Array.from(value) : value
+  if (value === undefined) return undefined
+  return toPortableWalletBytes(value) ?? value
 }
 
 /**
  * Wallet Wire returns binary transaction fields as Uint8Array, while some
  * payment libraries and JSON message transports still require number[]. Keep
  * that representation mismatch at the wallet boundary so the rest of PeerPay
- * behaves consistently across historical JSON wallets and current binary-wire
- * wallets.
+ * behaves consistently across historical JSON wallets, including numeric-key
+ * object payloads, and current binary-wire wallets.
  */
 export function normalizeCreateActionResult(result: CreateActionResult): CreateActionResult {
   const tx = portableAtomicBeef(result.tx)

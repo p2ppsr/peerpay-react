@@ -1,7 +1,7 @@
 {
   "name": "peerpay-react",
   "description": "Peer-to-peer payments.",
-  "version": "0.1.56",
+  "version": "0.1.57",
   "type": "module",
   "private": true,
   "dependencies": {

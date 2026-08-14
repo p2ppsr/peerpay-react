@@ -72,5 +72,7 @@ describe('normalizePaymentTransaction', () => {
   it('rejects malformed transaction bytes', () => {
     expect(() => normalizePaymentTransaction([1, 2, 3])).toThrow(InvalidPaymentTransactionError)
     expect(() => normalizePaymentTransaction([1, 2, 300])).toThrow(InvalidPaymentTransactionError)
+    expect(() => normalizePaymentTransaction([1, , 3])).toThrow(InvalidPaymentTransactionError)
+    expect(() => normalizePaymentTransaction({ 0: 1, 2: 3 })).toThrow(InvalidPaymentTransactionError)
   })
 })
