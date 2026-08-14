@@ -6,13 +6,15 @@ import RecentlySentList from './components/RecentlySentList'
 
 import './App.scss'
 import { toast } from 'react-toastify'
-import { AmountDisplay } from '@bsv/amountinator-react'
 
 // Import PeerPayClient
 import { IncomingPayment } from '@bsv/message-box-client'
 import constants from './utils/constants'
 import { peerPayClient } from './utils/peerPayClient'
 import { playSfx } from './utils/sfx'
+import SatoshiAmount from './components/SatoshiAmount'
+import { acceptIncomingPayment } from './utils/paymentCompatibility'
+import { reportTelemetryError, reportTelemetryEvent } from './utils/telemetry'
 
 // Interface for sent payments
 export interface SentPayment {
@@ -47,8 +49,13 @@ const App: React.FC = () => {
       }))
 
       setPayments(formattedPayments)
+      reportTelemetryEvent('payments.inbox_loaded', {
+        surface: 'inbox',
+        context: { paymentCount: formattedPayments.length }
+      })
     } catch (error) {
       console.error('[APP] Error fetching incoming payments:', error)
+      reportTelemetryError('payments.inbox_load_failed', error, { surface: 'inbox' })
     } finally {
       setLoading(false)
     }
@@ -90,10 +97,12 @@ const App: React.FC = () => {
               }
               return exists ? prevPayments : [...prevPayments, formattedPayment]
             })
+            reportTelemetryEvent('payment.live_received', { surface: 'inbox' })
           }
         })
       } catch (error) {
         console.error('[APP] Error listening for live payments:', error)
+        reportTelemetryError('payments.live_listener_failed', error, { surface: 'inbox' })
       }
     }
 
@@ -118,7 +127,12 @@ const App: React.FC = () => {
   const handleAcceptAll = async () => {
     if (!payments.length) return
     setBulkAccepting(true)
-    const tasks = payments.map(async (p) => {
+    reportTelemetryEvent('payments.bulk_accept_started', {
+      surface: 'inbox',
+      context: { paymentCount: payments.length }
+    })
+    const results: Array<{ ok: boolean }> = []
+    for (const p of payments) {
       try {
         const formatted: IncomingPayment = {
           messageId: p.messageId,
@@ -129,19 +143,24 @@ const App: React.FC = () => {
           },
           outputIndex: p.token.outputIndex ?? 0
         }
-        await peerPayClient.acceptPayment(formatted)
+        await acceptIncomingPayment(formatted)
         setPayments(prev => prev.filter(x => x.messageId !== p.messageId))
-        return { ok: true }
+        results.push({ ok: true })
       } catch (e) {
         console.error('[APP] Failed to accept payment', p.messageId, e)
-        return { ok: false }
+        reportTelemetryError('payment.accept_failed', e, { surface: 'inbox', tags: ['mode:bulk'] })
+        results.push({ ok: false })
       }
-    })
-    const results = await Promise.all(tasks)
+    }
     const accepted = results.filter(r => r.ok).length
     const failed = results.length - accepted
     if (accepted) toast.success(`Accepted ${accepted} payment${accepted !== 1 ? 's' : ''}.`)
     if (failed) toast.error(`Failed to accept ${failed} payment${failed !== 1 ? 's' : ''}.`)
+    reportTelemetryEvent('payments.bulk_accept_finished', {
+      surface: 'inbox',
+      severity: failed ? 'warn' : 'info',
+      context: { attempted: results.length, accepted, failed }
+    })
     setBulkAccepting(false)
   }
 
@@ -186,10 +205,7 @@ const App: React.FC = () => {
                   {payments.length} payment{payments.length !== 1 ? 's' : ''} • Total
                 </Typography>
                 <Box className='amount-inline amount-inline-total'>
-                  <AmountDisplay
-                    paymentAmount={totalIncomingAmount}
-                    formatOptions={{ useCommas: true, decimalPlaces: 2 }}
-                  />
+                  <SatoshiAmount amount={totalIncomingAmount} />
                 </Box>
               </Box>
               <Button

@@ -23,6 +23,7 @@ import { toast } from 'react-toastify'
 import ContactSelector from './ContactSelector'
 import QRScanner from './QRScanner'
 import { parseQRData } from '../utils/qrUtils'
+import { reportTelemetryError, reportTelemetryEvent } from '../utils/telemetry'
 
 interface ContactModalProps {
   open: boolean
@@ -111,6 +112,7 @@ const ContactModal: React.FC<ContactModalProps> = ({
         }
         onContactSelected(displayableIdentity)
         toast.success('Recipient selected from QR')
+        reportTelemetryEvent('qr.recipient_selected', { surface: 'contacts' })
         handleClose()
         return
       }
@@ -121,6 +123,7 @@ const ContactModal: React.FC<ContactModalProps> = ({
       toast.success('Identity key scanned successfully')
     } catch (error: any) {
       console.error('Error processing QR scan:', error)
+      reportTelemetryError('qr.scan_failed', error, { surface: 'contacts' })
       toast.error(`Failed to process QR code: ${error.message || 'Unknown error'}`)
       setShowScanner(false)
     }
@@ -158,10 +161,12 @@ const ContactModal: React.FC<ContactModalProps> = ({
       await identityClient.saveContact(displayableIdentity)
 
       toast.success(`Contact "${finalName}" saved successfully!`)
+      reportTelemetryEvent('contacts.save_succeeded', { surface: 'contacts' })
       onContactSelected(displayableIdentity)
       handleClose()
     } catch (error: any) {
       console.error('Error saving contact:', error)
+      reportTelemetryError('contacts.save_failed', error, { surface: 'contacts' })
       toast.error(`Failed to save contact: ${error.message || 'Unknown error'}`)
       setIsProcessing(false)
     }

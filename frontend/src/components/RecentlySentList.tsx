@@ -7,9 +7,9 @@ import {
   Avatar
 } from '@mui/material'
 import { Send as SendIcon } from '@mui/icons-material'
-import { AmountDisplay } from '@bsv/amountinator-react'
 import { IdentityCard } from '@bsv/identity-react'
 import { SentPayment } from '../App'
+import SatoshiAmount from './SatoshiAmount'
 
 interface RecentlySentListProps {
   payments: SentPayment[]
@@ -66,10 +66,7 @@ const RecentlySentList: React.FC<RecentlySentListProps> = ({ payments }) => {
               <Typography component='span' variant='subtitle2' className='amount-sign'>
                 -
               </Typography>
-              <AmountDisplay
-                paymentAmount={payment.amount}
-                formatOptions={{ useCommas: true, decimalPlaces: 2 }}
-              />
+              <SatoshiAmount amount={payment.amount} />
             </Box>
           </Box>
         </ListItem>

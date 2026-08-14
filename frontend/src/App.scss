@@ -11,6 +11,7 @@
 
 body {
   margin: 0;
+  overflow-x: hidden;
   background:
     radial-gradient(circle at 20% 10%, rgba(96, 227, 194, 0.18), transparent 35%),
     radial-gradient(circle at 78% 26%, rgba(101, 150, 255, 0.12), transparent 30%),
@@ -25,6 +26,7 @@ body {
 .peerpay-app {
   position: relative;
   min-height: 100vh;
+  overflow-x: clip;
   z-index: 1;
 }
 

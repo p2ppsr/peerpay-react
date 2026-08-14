@@ -20,6 +20,7 @@ import {
 } from '@mui/icons-material'
 import { DisplayableIdentity, IdentityClient } from '@bsv/sdk'
 import { toast } from 'react-toastify'
+import { reportTelemetryError, reportTelemetryEvent } from '../utils/telemetry'
 
 interface ContactSelectorProps {
   onContactSelected: (contact: DisplayableIdentity) => void
@@ -51,6 +52,7 @@ const ContactSelector: React.FC<ContactSelectorProps> = ({
       setContacts(contactList)
     } catch (err: any) {
       console.error('Error loading contacts:', err)
+      reportTelemetryError('contacts.load_failed', err, { surface: 'contacts' })
       setError(`Failed to load contacts: ${err.message || 'Unknown error'}`)
     } finally {
       setIsLoading(false)
@@ -76,8 +78,10 @@ const ContactSelector: React.FC<ContactSelectorProps> = ({
       setContacts((prev) => prev.filter((c) => c.identityKey !== identityKey))
       
       toast.success(`Removed ${contactName} from contacts`)
+      reportTelemetryEvent('contacts.remove_succeeded', { surface: 'contacts' })
     } catch (err: any) {
       console.error('Error removing contact:', err)
+      reportTelemetryError('contacts.remove_failed', err, { surface: 'contacts' })
       toast.error(`Failed to remove contact: ${err.message || 'Unknown error'}`)
     } finally {
       setDeletingContactKey(null)

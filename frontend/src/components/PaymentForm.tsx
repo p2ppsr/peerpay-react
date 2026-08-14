@@ -9,10 +9,12 @@ import {
 } from '@mui/icons-material'
 import { toast } from 'react-toastify'
 import { DisplayableIdentity } from '@bsv/sdk'
-import { AmountInputField, AmountDisplay } from '@bsv/amountinator-react'
 import ContactModal from './ContactModal'
 import { peerPayClient } from '../utils/peerPayClient'
 import { playSfx } from '../utils/sfx'
+import SatoshiAmount from './SatoshiAmount'
+import SatoshiInput from './SatoshiInput'
+import { amountBand, reportTelemetryError, reportTelemetryEvent } from '../utils/telemetry'
 
 interface PaymentFormProps {
   onSend: (amount: number, recipient: string) => void
@@ -70,16 +72,20 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ onSend }) => {
 
     if (finalRecipientKey.length !== 66) {
       toast.error('Invalid recipient key detected!')
-      console.error('Truncated Identity Key:', finalRecipientKey)
+      reportTelemetryEvent('payment.invalid_recipient', { surface: 'send', severity: 'warn' })
       return
     }
 
-    if (amountInSats <= 0) {
+    if (!Number.isSafeInteger(amountInSats) || amountInSats <= 0) {
       toast.error('How much do you want to send?')
       return
     }
 
     setIsSending(true)
+    reportTelemetryEvent('payment.send_started', {
+      surface: 'send',
+      context: { amountBand: amountBand(amountInSats) }
+    })
 
     try {
       await peerPayClient.sendLivePayment({ recipient: finalRecipientKey, amount: amountInSats })
@@ -89,6 +95,10 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ onSend }) => {
       setSentPaymentDetails({ amount: amountInSats, recipient: finalRecipientKey })
       setShowPaymentSent(true)
       onSend(amountInSats, finalRecipientKey)
+      reportTelemetryEvent('payment.send_succeeded', {
+        surface: 'send',
+        context: { amountBand: amountBand(amountInSats) }
+      })
     } catch (error: any) {
       toast.error('Error sending payment.')
 
@@ -100,6 +110,10 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ onSend }) => {
             : JSON.stringify(error)
 
       console.error('[Payment Error]', message)
+      reportTelemetryError('payment.send_failed', error, {
+        surface: 'send',
+        context: { amountBand: amountBand(amountInSats) }
+      })
     } finally {
       setIsSending(false)
     }
@@ -124,7 +138,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ onSend }) => {
             Payment Sent
           </Typography>
           <Box className='amount-inline amount-inline-sent' sx={{ mb: 2, justifyContent: 'center' }}>
-            <AmountDisplay paymentAmount={sentPaymentDetails.amount} formatOptions={{ useCommas: true, decimalPlaces: 2 }} />
+            <SatoshiAmount amount={sentPaymentDetails.amount} />
           </Box>
           <Typography variant='body2' color='text.secondary' sx={{ mb: 1 }}>
             Recipient
@@ -224,7 +238,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ onSend }) => {
       )}
 
       <Box className='amount-shell'>
-        <AmountInputField
+        <SatoshiInput
           onSatoshisChange={(sats: number | null) => {
             setAmountInSats(typeof sats === 'number' ? sats : 0)
           }}

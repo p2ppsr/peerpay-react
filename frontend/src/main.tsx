@@ -7,8 +7,11 @@ import web3Theme from "./theme"
 import { ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { setupSfx } from "./utils/sfx"
+import ErrorBoundary from "./components/ErrorBoundary"
+import { initTelemetry } from "./utils/telemetry"
 
 setupSfx()
+initTelemetry()
 
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement)
 root.render(
@@ -29,6 +32,8 @@ root.render(
       progressClassName="peerpay-toast-progress"
     />
     <CssBaseline />
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </ThemeProvider>
 )

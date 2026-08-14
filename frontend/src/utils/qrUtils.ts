@@ -1,4 +1,5 @@
 import QRCode from 'qrcode'
+import { reportTelemetryError } from './telemetry'
 
 export interface QRGenerationOptions {
   width?: number
@@ -39,6 +40,7 @@ export const generateIdentityQR = async (
     return await QRCode.toDataURL(qrData, defaultOptions)
   } catch (error) {
     console.error('Error generating QR code:', error)
+    reportTelemetryError('qr.generate_failed', error, { surface: 'qr' })
     throw new Error(`Failed to generate QR code: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
@@ -65,6 +67,7 @@ export const generateSimpleIdentityQR = async (
     return await QRCode.toDataURL(identityKey, defaultOptions)
   } catch (error) {
     console.error('Error generating simple QR code:', error)
+    reportTelemetryError('qr.generate_failed', error, { surface: 'qr', tags: ['mode:simple'] })
     throw new Error(`Failed to generate QR code: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
@@ -96,7 +99,7 @@ export const parseQRData = (qrData: string): string | null => {
     }
     
     // If it's a JSON object but no recognizable key field, return null
-    console.warn('JSON QR code found but no recognizable key field:', parsed)
+    console.warn('JSON QR code found but no recognizable key field.')
     return null
   } catch {
     // Not JSON, treat as raw string
@@ -118,7 +121,7 @@ export const parseQRData = (qrData: string): string | null => {
       }
     }
     
-    console.warn('QR code data does not appear to be a valid identity key:', qrData)
+    console.warn('QR code data does not appear to be a valid identity key.')
     return null
   }
 }

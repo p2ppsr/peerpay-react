@@ -2,10 +2,11 @@ import React, { useState } from 'react'
 import { List, ListItem, Button, Box, Typography, CircularProgress } from '@mui/material'
 import { IncomingPayment } from '@bsv/message-box-client'
 import { toast } from 'react-toastify'
-import { AmountDisplay } from '@bsv/amountinator-react'
 import { IdentityCard } from '@bsv/identity-react'
-import { peerPayClient } from '../utils/peerPayClient'
 import { playSfx } from '../utils/sfx'
+import SatoshiAmount from './SatoshiAmount'
+import { acceptIncomingPayment, rejectIncomingPayment } from '../utils/paymentCompatibility'
+import { amountBand, reportTelemetryError, reportTelemetryEvent } from '../utils/telemetry'
 
 export interface Payment {
   messageId: string
@@ -44,13 +45,22 @@ const PaymentList: React.FC<PaymentListProps> = ({ payments = [], onUpdatePaymen
         outputIndex: payment.token.outputIndex ?? 0
       }
 
-      await peerPayClient.acceptPayment(formattedPayment)
+      const format = await acceptIncomingPayment(formattedPayment)
       toast.success('Payment accepted!')
       void playSfx('receive')
       onUpdatePayments(payment.messageId)
+      reportTelemetryEvent('payment.accept_succeeded', {
+        surface: 'inbox',
+        tags: [`format:${format}`],
+        context: { amountBand: amountBand(payment.token.amount) }
+      })
     } catch (error) {
-      toast.error('Failed to accept payment.')
+      toast.error(error instanceof Error ? error.message : 'Failed to accept payment.')
       console.error('Error accepting payment:', error)
+      reportTelemetryError('payment.accept_failed', error, {
+        surface: 'inbox',
+        context: { amountBand: amountBand(payment.token.amount) }
+      })
     } finally {
       setProcessingMap(prev => {
         const next = { ...prev }
@@ -73,13 +83,22 @@ const PaymentList: React.FC<PaymentListProps> = ({ payments = [], onUpdatePaymen
         outputIndex: payment.token.outputIndex ?? 0
       }
 
-      await peerPayClient.rejectPayment(formattedPayment)
+      const format = await rejectIncomingPayment(formattedPayment)
       toast.info('Payment rejected.')
       void playSfx('reject')
       onUpdatePayments(payment.messageId)
+      reportTelemetryEvent('payment.reject_succeeded', {
+        surface: 'inbox',
+        tags: [`format:${format}`],
+        context: { amountBand: amountBand(payment.token.amount) }
+      })
     } catch (error) {
-      toast.error('Failed to reject payment.')
+      toast.error(error instanceof Error ? error.message : 'Failed to reject payment.')
       console.error('Error rejecting payment:', error)
+      reportTelemetryError('payment.reject_failed', error, {
+        surface: 'inbox',
+        context: { amountBand: amountBand(payment.token.amount) }
+      })
     } finally {
       setProcessingMap(prev => {
         const next = { ...prev }
@@ -141,10 +160,7 @@ const PaymentList: React.FC<PaymentListProps> = ({ payments = [], onUpdatePaymen
                 <Typography component='span' variant='subtitle1' className='amount-sign'>
                   +
                 </Typography>
-                <AmountDisplay
-                  paymentAmount={payment.token.amount}
-                  formatOptions={{ useCommas: true, decimalPlaces: 2 }}
-                />
+                <SatoshiAmount amount={payment.token.amount} />
               </Box>
             </Box>
 
